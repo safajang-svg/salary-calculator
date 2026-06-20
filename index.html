@@ -65,6 +65,7 @@ footer{text-align:center;font-size:11px;color:var(--color-text-secondary);margin
 <div class="tabs">
   <button class="tab active" onclick="showTab('input',this)">급여 입력</button>
   <button class="tab" onclick="showTab('result',this)">급여 명세서</button>
+  <button class="tab" onclick="showTab('usage',this)">사용방법</button>
 </div>
 
 <div id="tab-input" class="section active">
@@ -183,18 +184,83 @@ footer{text-align:center;font-size:11px;color:var(--color-text-secondary);margin
   <div id="result-empty" class="info-box" style="margin-top:1rem">급여 입력 탭에서 계산을 먼저 실행해주세요.</div>
 </div>
 
+<div id="tab-usage" class="section">
+  <div class="card">
+    <div class="section-title"><span>입력 예시 (2026년 5월 기준)</span></div>
+    <p class="hint" style="margin-bottom:10px">
+      아래는 실제 캘린더(3조2교대 근무표)를 보고 각 입력값을 어떻게 채우는지 예시로 보여드립니다.
+      "주"는 주간, "야"는 야간, "비"는 비번을 의미합니다.
+    </p>
+    <img src="usage_example.jpg" alt="3조2교대 근무표 입력 예시" style="width:100%;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);margin-bottom:14px">
+
+    <div class="info-box" style="background:#FFF2F2;border:1px solid #F3C9C9">
+      <strong style="color:#993C1D">야간근무 총일수: 9일</strong><br>
+      5월 전체 야간 근무는 11일이지만, 이 중 휴일(5/1, 5/25)에 해당하는 야간 2일은 제외하고
+      "야간근무 총일수(휴일야간근무 제외한 야간근무)" 칸에는 9를 입력합니다.
+    </div>
+
+    <div class="info-box" style="background:#EEF4FB;border:1px solid #C9DCF3">
+      <strong style="color:var(--color-text-info)">휴일근무</strong><br>
+      • 휴일 주간 근무일수: 1일 (5/24)<br>
+      • 휴일 야간 근무일수: 2일 (5/1, 5/25)<br>
+      위 두 값은 "휴일 근무" 카드의 각 칸에 그대로 입력합니다. 휴일 야간 근무일수는
+      야간수당 계산에도 자동으로 합산됩니다.
+    </div>
+
+    <div class="info-box" style="background:#F2F8EC;border:1px solid #D3E8BD">
+      <strong style="color:#3B6D11">휴일수당</strong><br>
+      • 특별휴일근무일수: 1일 (5/1 노동절) — 설·추석연휴, 노동절, 노조창립기념일이 여기 해당합니다.<br>
+      • 일반휴일근무일수: 2일 (5/24, 5/25) — 그 외 공휴일(어린이날, 부처님오신날 등)입니다.<br>
+      "휴일수당" 카드의 특별휴일/일반휴일 근무일수 칸에 각각 입력합니다.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title"><span>전체 사용 순서</span></div>
+    <ol style="padding-left:18px;font-size:14px;line-height:2;color:var(--color-text-primary)">
+      <li>"급여 입력" 탭에서 <strong>당월 통상임금</strong>을 확인하고 필요하면 수정합니다.</li>
+      <li><strong>호봉 변경</strong> 버튼으로 본인 호봉을 선택합니다 (처음 한 번만 하면, 다음 달부터는 그대로 유지됩니다).</li>
+      <li>연도·월을 선택하고, 캘린더를 보며 <strong>야간근무 총일수</strong>를 입력합니다 (휴일 야간근무는 제외).</li>
+      <li><strong>휴일 근무</strong> 카드에서 휴일 주간/야간 근무일수를 입력합니다.</li>
+      <li><strong>휴일수당</strong> 카드에서 특별휴일/일반휴일 근무일수를 입력합니다.</li>
+      <li><strong>급여 계산하기</strong> 버튼을 누르면 자동으로 "급여 명세서" 탭으로 이동하며 결과가 표시됩니다.</li>
+      <li>내용을 확인한 뒤 <strong>PDF 저장</strong> 버튼으로 명세서를 다운로드합니다.</li>
+    </ol>
+  </div>
+</div>
+
 <footer>이 페이지는 입력하신 정보를 서버로 전송하지 않습니다. 모든 계산은 사용 중인 브라우저 안에서만 처리됩니다.</footer>
 </div>
 
 <script>
 window.__jspdfLoaded = false;
 window.__jspdfFailed = false;
+window.__fontLoaded = false;
 </script>
+<script src="noto-kr-font.js" onerror="console.error('한글 폰트 파일(noto-kr-font.js)을 불러오지 못했습니다.')"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
-  onload="window.__jspdfLoaded=true; window.__updatePdfStatus && window.__updatePdfStatus();"
+  onload="window.__jspdfLoaded=true; window.__registerKoreanFont && window.__registerKoreanFont(); window.__updatePdfStatus && window.__updatePdfStatus();"
   onerror="window.__jspdfFailed=true; window.__updatePdfStatus && window.__updatePdfStatus();"></script>
 <script>
 function fmt(n){return Math.round(n).toLocaleString('ko-KR')+'원';}
+
+/* jsPDF에 한글 폰트(Noto Sans KR 서브셋)를 등록 */
+function registerKoreanFont(){
+  if(window.__fontLoaded)return;
+  if(typeof window.jspdf==='undefined')return;
+  if(typeof window.__NOTO_KR_FONT_BASE64__==='undefined'){
+    console.error('한글 폰트 데이터가 로드되지 않았습니다.');
+    return;
+  }
+  const {jsPDF}=window.jspdf;
+  jsPDF.API.events.push(['addFonts', function(){
+    this.addFileToVFS('NotoSansKR.ttf', window.__NOTO_KR_FONT_BASE64__);
+    this.addFont('NotoSansKR.ttf', 'NotoKR', 'normal');
+    this.addFont('NotoSansKR.ttf', 'NotoKR', 'bold');
+  }]);
+  window.__fontLoaded=true;
+}
+window.__registerKoreanFont=registerKoreanFont;
 
 function hoursToHM(decHours){
   const totalMins=Math.round(decHours*60);
@@ -423,9 +489,9 @@ function buildPdfDoc(r){
   const pageW=210, lm=15, rm=15, cw=pageW-lm-rm;
   let y=18;
 
-  doc.setFont('helvetica','bold');doc.setFontSize(18);
+  doc.setFont('NotoKR','bold');doc.setFontSize(18);
   doc.text('임 금 명 세 서',pageW/2,y,{align:'center'});
-  doc.setFontSize(9);doc.setFont('helvetica','normal');
+  doc.setFontSize(9);doc.setFont('NotoKR','normal');
   doc.text(`지급월 : ${r.y}-${String(r.m).padStart(2,'0')}`,pageW-rm,y,{align:'right'});
   y+=10;
 
@@ -442,17 +508,17 @@ function buildPdfDoc(r){
     doc.setDrawColor(180,180,180);
     doc.rect(lm,y,labelW,7);doc.rect(lm+labelW,y,valW,7);
     doc.rect(lm+labelW+valW,y,labelW,7);doc.rect(lm+2*labelW+valW,y,valW,7);
-    doc.setFont('helvetica','bold');
+    doc.setFont('NotoKR','bold');
     doc.text(row[0],lm+labelW/2,y+4.7,{align:'center'});
     doc.text(row[2],lm+labelW+valW+labelW/2,y+4.7,{align:'center'});
-    doc.setFont('helvetica','normal');
+    doc.setFont('NotoKR','normal');
     doc.text(row[1],lm+labelW+3,y+4.7);
     doc.text(row[3],lm+2*labelW+valW+3,y+4.7);
     y+=7;
   });
   y+=4;
 
-  doc.setFont('helvetica','bold');doc.setFontSize(10);
+  doc.setFont('NotoKR','bold');doc.setFontSize(10);
   doc.text('세부 내역',lm,y);
   y+=4;
 
@@ -468,7 +534,7 @@ function buildPdfDoc(r){
   doc.text('공         제',lm+half+4+half/2,y+4.8,{align:'center'});
   y+=7;
 
-  doc.setFontSize(8.5);doc.setFont('helvetica','normal');
+  doc.setFontSize(8.5);doc.setFont('NotoKR','normal');
   const c1=half*0.32, c2=half*0.68;
   doc.setFillColor(240,240,240);
   doc.rect(lm,y,c1,6,'F');doc.rect(lm+c1,y,c2,6,'F');
@@ -497,7 +563,7 @@ function buildPdfDoc(r){
   ];
   const rowH=6.2;
   const maxRows=Math.max(payItems.length,deductItems.length);
-  doc.setFont('helvetica','normal');
+  doc.setFont('NotoKR','normal');
   for(let i=0;i<maxRows;i++){
     doc.setDrawColor(200,200,200);
     doc.rect(lm,y,c1,rowH);doc.rect(lm+c1,y,c2,rowH);
@@ -513,7 +579,7 @@ function buildPdfDoc(r){
     y+=rowH;
   }
 
-  doc.setFont('helvetica','bold');
+  doc.setFont('NotoKR','bold');
   doc.setFillColor(220,232,250);doc.rect(lm,y,c1,7,'F');doc.rect(lm+c1,y,c2,7,'F');
   doc.setFillColor(250,222,222);doc.rect(lm+half+4,y,c1,7,'F');doc.rect(lm+half+4+c1,y,c2,7,'F');
   doc.rect(lm,y,c1,7);doc.rect(lm+c1,y,c2,7);
@@ -530,7 +596,7 @@ function buildPdfDoc(r){
   doc.setTextColor(0,0,0);
   y+=14;
 
-  doc.setFontSize(8.5);doc.setFont('helvetica','bold');
+  doc.setFontSize(8.5);doc.setFont('NotoKR','bold');
   const lblW2=cw/5;
   const headers=['근로일수','총 근로시간수','연장근로시간수','야간근로시간수','휴일근로시간수'];
   headers.forEach((h,i)=>{
@@ -540,7 +606,7 @@ function buildPdfDoc(r){
     doc.text(h,lm+i*lblW2+lblW2/2,y+4,{align:'center'});
   });
   y+=6;
-  doc.setFont('helvetica','normal');
+  doc.setFont('NotoKR','normal');
   const vals=[r.days+'일',hoursToHM(r.otHours+r.holOTHours+r.nightHours+r.holidayHours),hoursToHM(r.otHours+r.holOTHours),hoursToHM(r.nightHours),hoursToHM(r.holidayHours)];
   vals.forEach((v,i)=>{
     doc.rect(lm+i*lblW2,y,lblW2,6);
@@ -561,6 +627,13 @@ function generatePDF(){
   }
   if(typeof window.jspdf==='undefined'){
     alert('PDF 라이브러리가 아직 로드되지 않았습니다.\n인터넷 연결을 확인한 뒤 다시 시도해주세요.');
+    return;
+  }
+  if(!window.__fontLoaded){
+    registerKoreanFont();
+  }
+  if(typeof window.__NOTO_KR_FONT_BASE64__==='undefined'){
+    alert('한글 폰트 파일을 불러오지 못했습니다.\nnoto-kr-font.js 파일이 index.html과 같은 폴더에 있는지 확인해주세요.');
     return;
   }
   try{
