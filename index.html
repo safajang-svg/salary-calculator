@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3조2교대 급여 계산기</title>
+<style>
+:root{
+  --color-background-primary:#ffffff;
+  --color-background-secondary:#f5f5f4;
+  --color-background-info:#eef4fb;
+  --color-text-primary:#1a1a19;
+  --color-text-secondary:#6b6a66;
+  --color-text-info:#185fa5;
+  --color-border-primary:#1a1a19;
+  --color-border-secondary:#c9c8c3;
+  --color-border-tertiary:#e3e2dd;
+  --border-radius-md:8px;
+  --border-radius-lg:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:var(--color-background-secondary);color:var(--color-text-primary)}
+.app{padding:1.5rem 1rem;max-width:720px;margin:0 auto}
+h1{font-size:18px;font-weight:600;margin-bottom:1rem;text-align:center}
+.tabs{display:flex;gap:4px;margin-bottom:1.5rem;border-bottom:0.5px solid var(--color-border-tertiary);padding-bottom:0;position:sticky;top:0;background:var(--color-background-secondary);z-index:10}
+.tab{padding:10px 16px;font-size:15px;border:none;background:none;cursor:pointer;color:var(--color-text-secondary);border-bottom:2px solid transparent;margin-bottom:-0.5px}
+.tab.active{color:var(--color-text-primary);border-bottom:2px solid var(--color-text-primary);font-weight:600}
+.section{display:none}.section.active{display:block}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem;margin-bottom:1rem}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+label{font-size:13px;color:var(--color-text-secondary);display:block;margin-bottom:4px}
+input,select{width:100%;padding:10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:15px;background:var(--color-background-primary);color:var(--color-text-primary)}
+input:disabled,select:disabled{background:var(--color-background-secondary);color:var(--color-text-secondary)}
+.section-title{font-size:16px;font-weight:600;margin-bottom:1rem;padding-bottom:8px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;justify-content:space-between;align-items:center}
+.calc-btn{width:100%;padding:14px;background:var(--color-text-primary);color:#fff;border:none;border-radius:var(--border-radius-md);font-size:16px;font-weight:600;cursor:pointer;margin-top:4px}
+.calc-btn:hover{opacity:0.85}
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem}
+.metric{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px}
+.metric .lbl{font-size:12px;color:var(--color-text-secondary);margin-bottom:4px}
+.metric .val{font-size:18px;font-weight:600}
+.detail-table{width:100%;font-size:14px;border-collapse:collapse}
+.detail-table th{text-align:left;font-weight:600;font-size:12px;color:var(--color-text-secondary);padding:6px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.detail-table td{padding:7px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.detail-table td:last-child{text-align:right}
+.detail-table tr.total td{font-weight:600;border-top:1px solid var(--color-border-primary);border-bottom:none}
+.pdf-btn{width:100%;padding:14px;background:transparent;color:var(--color-text-primary);border:1px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:16px;font-weight:600;cursor:pointer;margin-top:8px;text-decoration:none;display:block;text-align:center}
+.pdf-btn:disabled{opacity:0.5;cursor:not-allowed}
+.hint{font-size:12px;color:var(--color-text-secondary);margin-top:4px}
+.info-box{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px;font-size:12px;color:var(--color-text-secondary);margin-bottom:12px;line-height:1.6}
+.edit-toggle-btn{padding:6px 14px;font-size:13px;background:transparent;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);cursor:pointer;color:var(--color-text-secondary)}
+.edit-toggle-btn.editing{background:var(--color-text-primary);color:#fff;border-color:var(--color-text-primary)}
+.fixed-badge{font-size:10px;background:var(--color-background-secondary);color:var(--color-text-secondary);padding:1px 6px;border-radius:3px;margin-left:6px;font-weight:400}
+.add-btn{padding:8px 12px;font-size:14px;background:transparent;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);cursor:pointer;color:var(--color-text-primary)}
+.grade-badge{display:inline-block;background:var(--color-background-info);color:var(--color-text-info);padding:2px 8px;border-radius:4px;font-size:12px;font-weight:500;margin-left:6px}
+.wage-card{border:1px solid var(--color-border-secondary);background:var(--color-background-info)}
+.pdf-status{font-size:11px;text-align:center;margin-top:6px;color:var(--color-text-secondary)}
+.pdf-status.ok{color:#3B6D11}
+.pdf-status.fail{color:#993C1D}
+footer{text-align:center;font-size:11px;color:var(--color-text-secondary);margin-top:2rem;padding-bottom:1rem}
+</style>
+</head>
+<body>
+<div class="app">
+<h1>3조2교대 급여 계산기</h1>
+<div class="tabs">
+  <button class="tab active" onclick="showTab('input',this)">급여 입력</button>
+  <button class="tab" onclick="showTab('result',this)">급여 명세서</button>
+</div>
+
+<div id="tab-input" class="section active">
+  <div class="card wage-card">
+    <div class="section-title"><span>당월 통상임금 <span class="fixed-badge">매월 수정 가능</span></span></div>
+    <div class="row">
+      <div><label>당월 통상임금 (시간단가, 원/시간)</label><input type="number" id="monthly_wage" value="14627"></div>
+      <div></div>
+    </div>
+    <p class="hint">시간외수당·휴일수당·야간수당·휴일시간외수당은 모두 이 값을 기준으로 계산됩니다.</p>
+  </div>
+
+  <div class="card">
+    <div class="section-title">
+      <span>고정 항목 <span class="fixed-badge">호봉표 기준</span></span>
+      <button class="edit-toggle-btn" id="edit-toggle-btn" onclick="toggleEditFixed()">호봉 변경</button>
+    </div>
+    <div class="info-box" id="fixed-hint">호봉을 선택하면 본봉이 호봉표(1~34호봉) 기준으로 자동 적용됩니다. 호봉이 바뀔 때만 "호봉 변경"을 눌러 수정하세요.</div>
+    <div class="row">
+      <div><label>호봉 선택</label><select id="grade" disabled onchange="applyGrade()"></select></div>
+      <div></div>
+    </div>
+    <div class="row">
+      <div><label>본봉 (월정액) <span class="grade-badge" id="grade-badge"></span></label><input type="number" id="base_salary" value="2593280" disabled></div>
+      <div><label>가족수당</label><input type="number" id="family_allowance" value="40000" disabled></div>
+    </div>
+    <div class="row">
+      <div><label>정액급식비 (월정액, 비과세)</label><input type="number" id="meal_allowance" value="160000" disabled></div>
+      <div></div>
+    </div>
+    <div class="row">
+      <div><label>상조회비</label><input type="number" id="mutual_fee" value="10000" disabled></div>
+      <div><label>노조회비</label><input type="number" id="union_fee" value="26000" disabled></div>
+    </div>
+    <div class="row">
+      <div><label>부양가족 공제인원수 (본인포함)</label><input type="number" id="dependents" value="1" min="1" disabled></div>
+      <div></div>
+    </div>
+    <p class="hint">* 정액급식비는 비과세 항목으로, 4대보험·소득세 산정 기준액에서 제외됩니다.</p>
+    <button class="add-btn" id="save-fixed-btn" style="display:none;width:100%;margin-top:8px;background:var(--color-text-primary);color:#fff;border-color:var(--color-text-primary)" onclick="saveFixed()">저장</button>
+  </div>
+
+  <div class="card">
+    <div class="section-title"><span>기본 정보</span></div>
+    <div class="row">
+      <div><label>연도</label><input type="number" id="year" value="2026" min="2020" max="2030"></div>
+      <div><label>월</label><select id="month">
+        <option value="1">1월</option><option value="2">2월</option><option value="3">3월</option>
+        <option value="4">4월</option><option value="5" selected>5월</option><option value="6">6월</option>
+        <option value="7">7월</option><option value="8">8월</option><option value="9">9월</option>
+        <option value="10">10월</option><option value="11">11월</option><option value="12">12월</option>
+      </select></div>
+    </div>
+    <div class="row">
+      <div><label>야간근무 총일수 (휴일야간근무 제외한 야간근무)</label><input type="number" id="night_days" value="10" min="0" max="16"></div>
+      <div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title"><span>휴일 근무</span></div>
+    <div class="info-box">휴일에 발생한 근무를 주간/야간으로 구분하여 입력합니다. 휴일 야간근무 일수는 야간수당 계산에도 합산됩니다.</div>
+    <div class="row">
+      <div><label>휴일 주간 근무일수</label><input type="number" id="holiday_day_shift_days" value="0" min="0" max="16"></div>
+      <div><label>휴일 야간 근무일수</label><input type="number" id="holiday_night_shift_days" value="0" min="0" max="16"></div>
+    </div>
+    <p class="hint">* 휴일시간외수당 = 휴일 야간근무일수 × 4시간 × 당월 통상임금 × 200%</p>
+  </div>
+
+  <div class="card">
+    <div class="section-title"><span>휴일수당</span></div>
+    <div class="info-box">
+      <strong style="color:var(--color-text-primary)">특별휴일</strong>(설연휴·추석연휴·5월1일·노조창립기념일[10월 4번째 금요일]) 근무는 <strong style="color:var(--color-text-primary)">1일 8시간</strong>, <strong style="color:var(--color-text-primary)">일반휴일</strong>(그 외 공휴일) 근무는 <strong style="color:var(--color-text-primary)">1일 2.66시간</strong>으로 환산합니다.<br>
+      휴일수당 = 당월 통상임금 × 150% × 환산 시간
+    </div>
+    <div class="row">
+      <div><label>특별휴일 근무일수</label><input type="number" id="special_holiday_days" value="0" min="0" step="1"></div>
+      <div><label>일반휴일 근무일수</label><input type="number" id="normal_holiday_days" value="0" min="0" step="1"></div>
+    </div>
+  </div>
+
+  <button class="calc-btn" onclick="calculate()">급여 계산하기</button>
+</div>
+
+<div id="tab-result" class="section">
+  <div class="card" id="result-card" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <div>
+        <div style="font-size:13px;color:var(--color-text-secondary)">공무직(<span id="result-grade-label"></span>)</div>
+        <div id="result-period" style="font-size:17px;font-weight:600"></div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:12px;color:var(--color-text-secondary)">실수령액</div>
+        <div id="net-pay" style="font-size:22px;font-weight:700;color:var(--color-text-info)"></div>
+      </div>
+    </div>
+    <div class="result-grid">
+      <div class="metric"><div class="lbl">지급 합계</div><div class="val" id="r-total-pay"></div></div>
+      <div class="metric"><div class="lbl">공제 합계</div><div class="val" id="r-total-deduct"></div></div>
+    </div>
+    <table class="detail-table">
+      <thead><tr><th>지급 항목</th><th style="text-align:right">금액</th></tr></thead>
+      <tbody id="pay-rows"></tbody>
+    </table>
+    <table class="detail-table" style="margin-top:1rem">
+      <thead><tr><th>공제 항목</th><th style="text-align:right">금액</th></tr></thead>
+      <tbody id="deduct-rows"></tbody>
+    </table>
+    <div style="margin-top:1rem;padding:10px;background:var(--color-background-secondary);border-radius:var(--border-radius-md)">
+      <div style="font-size:12px;font-weight:600;margin-bottom:6px">산출 근거</div>
+      <div id="calc-basis" style="font-size:11px;color:var(--color-text-secondary);line-height:1.8"></div>
+    </div>
+    <button class="pdf-btn" id="pdf-generate-btn" onclick="generatePDF()">PDF 저장 준비 중...</button>
+    <div class="pdf-status" id="pdf-status">PDF 라이브러리 로딩 중입니다...</div>
+  </div>
+  <div id="result-empty" class="info-box" style="margin-top:1rem">급여 입력 탭에서 계산을 먼저 실행해주세요.</div>
+</div>
+
+<footer>이 페이지는 입력하신 정보를 서버로 전송하지 않습니다. 모든 계산은 사용 중인 브라우저 안에서만 처리됩니다.</footer>
+</div>
+
+<script>
+window.__jspdfLoaded = false;
+window.__jspdfFailed = false;
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+  onload="window.__jspdfLoaded=true; window.__updatePdfStatus && window.__updatePdfStatus();"
+  onerror="window.__jspdfFailed=true; window.__updatePdfStatus && window.__updatePdfStatus();"></script>
+<script>
+function fmt(n){return Math.round(n).toLocaleString('ko-KR')+'원';}
+
+function hoursToHM(decHours){
+  const totalMins=Math.round(decHours*60);
+  const h=Math.floor(totalMins/60);
+  const mi=totalMins%60;
+  return mi===0?`${h}시`:`${h}시 ${mi}분`;
+}
+
+function updatePdfStatus(){
+  const btn=document.getElementById('pdf-generate-btn');
+  const status=document.getElementById('pdf-status');
+  if(!btn||!status)return;
+  if(window.__jspdfLoaded && window.jspdf){
+    btn.textContent='급여명세서 PDF 저장 (회사 양식)';
+    btn.disabled=false;
+    status.textContent='';
+  }else if(window.__jspdfFailed){
+    btn.textContent='PDF 라이브러리 로드 실패';
+    btn.disabled=true;
+    status.textContent='인터넷 연결을 확인한 뒤 새로고침해 다시 시도해주세요.';
+    status.className='pdf-status fail';
+  }else{
+    btn.textContent='PDF 저장 준비 중...';
+    btn.disabled=true;
+    status.textContent='PDF 라이브러리 로딩 중입니다...';
+  }
+}
+window.__updatePdfStatus=updatePdfStatus;
+setTimeout(()=>{ if(!window.__jspdfLoaded){ window.__jspdfFailed=true; updatePdfStatus(); } },6000);
+const pdfPoll=setInterval(()=>{
+  if(typeof window.jspdf!=='undefined'){
+    window.__jspdfLoaded=true; updatePdfStatus(); clearInterval(pdfPoll);
+  }
+},300);
+
+const GRADE_TABLE={1:2448340,2:2524450,3:2593280,4:2646580,5:2673110,6:2719840,7:2741940,8:2767850,9:2797660,10:2827890,11:2887340,12:2929520,13:2957500,14:2985780,15:3014570,16:3055410,17:3112160,18:3135480,19:3159100,20:3182860,21:3216280,22:3276880,23:3301890,24:3327030,25:3352530,26:3378240,27:3436500,28:3463050,29:3489850,30:3516960,31:3544290,32:3565870,33:3587350,34:3608820};
+
+function populateGradeSelect(selectedGrade){
+  const sel=document.getElementById('grade');
+  sel.innerHTML='';
+  Object.keys(GRADE_TABLE).forEach(g=>{
+    const opt=document.createElement('option');
+    opt.value=g;
+    opt.textContent=`${g}호봉 (${fmt(GRADE_TABLE[g])})`;
+    if(parseInt(g)===selectedGrade)opt.selected=true;
+    sel.appendChild(opt);
+  });
+}
+function applyGrade(){
+  const g=parseInt(document.getElementById('grade').value);
+  document.getElementById('base_salary').value=GRADE_TABLE[g];
+  document.getElementById('grade-badge').textContent=`${g}호봉 적용`;
+}
+
+const FIXED_KEYS=['base_salary','family_allowance','meal_allowance','mutual_fee','union_fee','dependents'];
+let fixedValues={grade:3,base_salary:2593280,family_allowance:40000,meal_allowance:160000,mutual_fee:10000,union_fee:26000,dependents:1};
+let isEditingFixed=false;
+
+populateGradeSelect(fixedValues.grade);
+document.getElementById('grade-badge').textContent=`${fixedValues.grade}호봉 적용`;
+updatePdfStatus();
+
+function toggleEditFixed(){
+  isEditingFixed=!isEditingFixed;
+  const btn=document.getElementById('edit-toggle-btn');
+  const saveBtn=document.getElementById('save-fixed-btn');
+  const hint=document.getElementById('fixed-hint');
+  document.getElementById('grade').disabled=!isEditingFixed;
+  FIXED_KEYS.forEach(k=>{document.getElementById(k).disabled=!isEditingFixed;});
+  if(isEditingFixed){
+    btn.textContent='편집 취소';
+    btn.classList.add('editing');
+    saveBtn.style.display='block';
+    hint.innerHTML='호봉을 변경하면 본봉이 자동으로 갱신됩니다. 필요시 직접 값을 더 수정한 뒤 "저장"을 누르세요.';
+  }else{
+    btn.textContent='호봉 변경';
+    btn.classList.remove('editing');
+    saveBtn.style.display='none';
+    populateGradeSelect(fixedValues.grade);
+    document.getElementById('grade-badge').textContent=`${fixedValues.grade}호봉 적용`;
+    document.getElementById('base_salary').value=fixedValues.base_salary;
+    FIXED_KEYS.forEach(k=>{document.getElementById(k).value=fixedValues[k];});
+    hint.innerHTML='호봉을 선택하면 본봉이 호봉표(1~34호봉) 기준으로 자동 적용됩니다. 호봉이 바뀔 때만 "호봉 변경"을 눌러 수정하세요.';
+  }
+}
+function saveFixed(){
+  fixedValues.grade=parseInt(document.getElementById('grade').value);
+  FIXED_KEYS.forEach(k=>{fixedValues[k]=parseFloat(document.getElementById(k).value)||fixedValues[k];});
+  isEditingFixed=false;
+  const btn=document.getElementById('edit-toggle-btn');
+  btn.textContent='호봉 변경';
+  btn.classList.remove('editing');
+  document.getElementById('save-fixed-btn').style.display='none';
+  document.getElementById('fixed-hint').innerHTML=`✓ 저장되었습니다. 현재 ${fixedValues.grade}호봉 기준(본봉 ${fmt(fixedValues.base_salary)})이 적용됩니다.`;
+  document.getElementById('grade').disabled=true;
+  FIXED_KEYS.forEach(k=>{document.getElementById(k).disabled=true;});
+}
+
+function showTab(t,btn){
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+t).classList.add('active');
+}
+
+function tenMillionTax(){
+  const anchorIncome=4400000, anchorTax=249360, slope=2670/20000;
+  return anchorTax+slope*(10000000-anchorIncome);
+}
+function calcIncomeTax(taxableBase){
+  let baseTax;
+  const tax10m=tenMillionTax();
+  if(taxableBase<=10000000){
+    const anchorIncome=4400000, anchorTax=249360, slope=2670/20000;
+    const bracketFloor=Math.floor(taxableBase/20000)*20000;
+    baseTax=anchorTax+slope*(bracketFloor-anchorIncome);
+    if(baseTax<0)baseTax=0;
+  }else if(taxableBase<=14000000){
+    baseTax=tax10m+(taxableBase-10000000)*0.98*0.35+25000;
+  }else if(taxableBase<=28000000){
+    baseTax=tax10m+1397000+(taxableBase-14000000)*0.98*0.38;
+  }else if(taxableBase<=30000000){
+    baseTax=tax10m+6610600+(taxableBase-28000000)*0.98*0.40;
+  }else if(taxableBase<=45000000){
+    baseTax=tax10m+7394600+(taxableBase-30000000)*0.40;
+  }else if(taxableBase<=87000000){
+    baseTax=tax10m+13394600+(taxableBase-45000000)*0.42;
+  }else{
+    baseTax=tax10m+31034600+(taxableBase-87000000)*0.45;
+  }
+  return Math.floor(baseTax/10)*10;
+}
+
+let lastResult=null;
+
+function calculate(){
+  const y=parseInt(document.getElementById('year').value);
+  const m=parseInt(document.getElementById('month').value);
+  const grade=fixedValues.grade;
+  const base=fixedValues.base_salary;
+  const family=fixedValues.family_allowance;
+  const meal=fixedValues.meal_allowance;
+  const hourly=parseFloat(document.getElementById('monthly_wage').value)||14627;
+  const mutual=fixedValues.mutual_fee;
+  const union=fixedValues.union_fee;
+  const dependents=fixedValues.dependents||1;
+  const nightDays=parseFloat(document.getElementById('night_days').value)||0;
+  const holDayShiftDays=parseFloat(document.getElementById('holiday_day_shift_days').value)||0;
+  const holNightShiftDays=parseFloat(document.getElementById('holiday_night_shift_days').value)||0;
+  const specialHolDays=parseFloat(document.getElementById('special_holiday_days').value)||0;
+  const normalHolDays=parseFloat(document.getElementById('normal_holiday_days').value)||0;
+
+  const totalNightDaysForPay=nightDays+holNightShiftDays;
+  const nightHours=totalNightDaysForPay*6.25;
+  const nightHoursHM=hoursToHM(nightHours);
+  const nightPay=Math.round(hourly*0.5*nightHours);
+
+  const otHours=nightDays*4;
+  const otPay=Math.round(otHours*hourly*1.5);
+
+  const holOTHours=holNightShiftDays*4;
+  const holOTPay=Math.round(holOTHours*hourly*2.0);
+
+  const days=new Date(y,m,0).getDate();
+  const actualBase=Math.round(base/31*days);
+
+  const holidayHours=specialHolDays*8+normalHolDays*2.66;
+  const holPay=Math.round(holidayHours*hourly*1.5);
+
+  const pays=[
+    {key:'본봉',name:'본봉',amt:actualBase,basis:`${grade}호봉 호봉표 금액 반영(월정액:${fmt(base)},일수:${days})`},
+    {key:'가족수당',name:'가족수당',amt:family,basis:'부모'},
+    {key:'시간외수당',name:'시간외수당',amt:otPay,basis:`야간근무 총일수(${nightDays}일) × 4시간 × 당월 통상임금(${hourly.toLocaleString()}) × 150%`},
+    {key:'휴일수당',name:'휴일수당',amt:holPay,basis:`당월 통상임금(${hourly.toLocaleString()}) × 150% × ${holidayHours.toFixed(2)}시간 [특별휴일 ${specialHolDays}일×8h + 일반휴일 ${normalHolDays}일×2.66h]`},
+    {key:'야간수당',name:'야간수당',amt:nightPay,basis:`당월 통상임금(${hourly.toLocaleString()}) × 50% × ${nightHoursHM} [야간근무 ${nightDays}일 + 휴일야간 ${holNightShiftDays}일 = ${totalNightDaysForPay}일 × 6.25h = ${nightHours}h]`},
+    {key:'휴일시간외수당',name:'휴일시간외수당',amt:holOTPay,basis:`휴일 야간근무일수(${holNightShiftDays}일) × 4시간 × 당월 통상임금(${hourly.toLocaleString()}) × 200%`},
+    {key:'정액급식비',name:'정액급식비',amt:meal,basis:`호봉표 금액 반영(월정액:${fmt(meal)},일수:${days}) — 비과세`},
+  ];
+  const totalPay=pays.reduce((s,p)=>s+p.amt,0);
+  const taxableBase=totalPay-meal;
+  const pensionBase=Math.floor(taxableBase/1000)*1000;
+  const health=Math.round(taxableBase*0.03595);
+  const care=Math.round(health*0.1314047);
+  const pension=Math.round(pensionBase*0.045);
+  const employ=Math.round(totalPay*0.009);
+  const incomeTax=calcIncomeTax(taxableBase);
+  const localTax=Math.floor(incomeTax/10/10)*10;
+
+  const totalDeduct=health+care+pension+employ+incomeTax+localTax+mutual+union;
+  const netPay=totalPay-totalDeduct;
+
+  lastResult={y,m,grade,pays,totalPay,health,care,pension,employ,incomeTax,localTax,taxableBase,mutual,union,totalDeduct,netPay,hourly,nightDays,nightHours,nightHoursHM,otHours,holOTHours,holidayHours,days,base,family,meal,specialHolDays,normalHolDays,dependents,holDayShiftDays,holNightShiftDays,totalNightDaysForPay};
+
+  document.getElementById('result-grade-label').textContent=`${String(grade).padStart(2,'0')}호봉`;
+  document.getElementById('result-period').textContent=`${y}년 ${m}월 급여`;
+  document.getElementById('net-pay').textContent=fmt(netPay);
+  document.getElementById('r-total-pay').textContent=fmt(totalPay);
+  document.getElementById('r-total-deduct').textContent=fmt(totalDeduct);
+  document.getElementById('pay-rows').innerHTML=pays.map(p=>`<tr><td>${p.name}</td><td>${fmt(p.amt)}</td></tr>`).join('');
+  const deducts=[
+    {name:'건강보험',amt:health},{name:'노인장기요양보험',amt:care},
+    {name:'국민연금',amt:pension},{name:'고용보험',amt:employ},
+    {name:'소득세',amt:incomeTax},{name:'지방소득세',amt:localTax},
+    {name:'상조회비',amt:mutual},{name:'노조회비',amt:union}
+  ];
+  document.getElementById('deduct-rows').innerHTML=deducts.map(d=>`<tr><td>${d.name}</td><td>${fmt(d.amt)}</td></tr>`).join('')+`<tr class="total"><td>합계</td><td>${fmt(totalDeduct)}</td></tr>`;
+  const basis=pays.map(p=>`• ${p.name}: ${p.basis}`).join('\n')+
+    `\n• 과세대상금액(지급액계-비과세 정액급식비) = ${fmt(totalPay)} - ${fmt(meal)} = ${fmt(taxableBase)}`+
+    `\n• 건강보험: 과세대상금액(${fmt(taxableBase)}) × 3.595%`+
+    `\n• 노인장기요양보험: 건강보험(${fmt(health)}) × 13.14047%`+
+    `\n• 국민연금: 과세대상금액 기준(천원 절사, ${fmt(Math.floor(taxableBase/1000)*1000)}) × 4.5%`+
+    `\n• 고용보험: 지급액계(${fmt(totalPay)}) × 0.9%`+
+    `\n• 소득세: 간이세액표(부양가족 ${dependents}인) 적용, 과세금액 ${fmt(taxableBase)} 기준 = ${fmt(incomeTax)}`+
+    `\n• 지방소득세: 소득세(${fmt(incomeTax)}) ÷ 10 (원단위 절사) = ${fmt(localTax)}`;
+  document.getElementById('calc-basis').innerHTML=basis.replace(/\n/g,'<br>');
+  document.getElementById('result-card').style.display='block';
+  document.getElementById('result-empty').style.display='none';
+
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',i===1));
+  document.querySelectorAll('.section').forEach((s,i)=>s.classList.toggle('active',i===1));
+}
+
+function buildPdfDoc(r){
+  const{jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const pageW=210, lm=15, rm=15, cw=pageW-lm-rm;
+  let y=18;
+
+  doc.setFont('helvetica','bold');doc.setFontSize(18);
+  doc.text('임 금 명 세 서',pageW/2,y,{align:'center'});
+  doc.setFontSize(9);doc.setFont('helvetica','normal');
+  doc.text(`지급월 : ${r.y}-${String(r.m).padStart(2,'0')}`,pageW-rm,y,{align:'right'});
+  y+=10;
+
+  const infoRows=[
+    ['부서','시설팀','직급',`공무직(${String(r.grade).padStart(2,'0')}호봉)`],
+    ['직종','실무사무원','직종세분류','경비']
+  ];
+  doc.setFontSize(9);
+  const labelW=24, valW=cw/2-labelW;
+  infoRows.forEach(row=>{
+    doc.setFillColor(245,245,245);
+    doc.rect(lm,y,labelW,7,'F');
+    doc.rect(lm+labelW+valW,y,labelW,7,'F');
+    doc.setDrawColor(180,180,180);
+    doc.rect(lm,y,labelW,7);doc.rect(lm+labelW,y,valW,7);
+    doc.rect(lm+labelW+valW,y,labelW,7);doc.rect(lm+2*labelW+valW,y,valW,7);
+    doc.setFont('helvetica','bold');
+    doc.text(row[0],lm+labelW/2,y+4.7,{align:'center'});
+    doc.text(row[2],lm+labelW+valW+labelW/2,y+4.7,{align:'center'});
+    doc.setFont('helvetica','normal');
+    doc.text(row[1],lm+labelW+3,y+4.7);
+    doc.text(row[3],lm+2*labelW+valW+3,y+4.7);
+    y+=7;
+  });
+  y+=4;
+
+  doc.setFont('helvetica','bold');doc.setFontSize(10);
+  doc.text('세부 내역',lm,y);
+  y+=4;
+
+  const half=cw/2-2;
+  doc.setFillColor(225,235,250);
+  doc.rect(lm,y,half,7,'F');
+  doc.setFillColor(250,230,230);
+  doc.rect(lm+half+4,y,half,7,'F');
+  doc.setDrawColor(150,150,150);
+  doc.rect(lm,y,half,7);doc.rect(lm+half+4,y,half,7);
+  doc.setFontSize(10);
+  doc.text('지         급',lm+half/2,y+4.8,{align:'center'});
+  doc.text('공         제',lm+half+4+half/2,y+4.8,{align:'center'});
+  y+=7;
+
+  doc.setFontSize(8.5);doc.setFont('helvetica','normal');
+  const c1=half*0.32, c2=half*0.68;
+  doc.setFillColor(240,240,240);
+  doc.rect(lm,y,c1,6,'F');doc.rect(lm+c1,y,c2,6,'F');
+  doc.rect(lm+half+4,y,c1,6,'F');doc.rect(lm+half+4+c1,y,c2,6,'F');
+  doc.rect(lm,y,c1,6);doc.rect(lm+c1,y,c2,6);
+  doc.rect(lm+half+4,y,c1,6);doc.rect(lm+half+4+c1,y,c2,6);
+  doc.text('임금 항목',lm+c1/2,y+4,{align:'center'});
+  doc.text('지급 금액',lm+c1+c2/2,y+4,{align:'center'});
+  doc.text('공제 항목',lm+half+4+c1/2,y+4,{align:'center'});
+  doc.text('공제 금액',lm+half+4+c1+c2/2,y+4,{align:'center'});
+  y+=6;
+
+  const payItems=[
+    ['본봉',r.pays.find(p=>p.key==='본봉').amt],
+    ['가족수당',r.pays.find(p=>p.key==='가족수당').amt],
+    ['시간외수당',r.pays.find(p=>p.key==='시간외수당').amt],
+    ['휴일수당',r.pays.find(p=>p.key==='휴일수당').amt],
+    ['야간수당',r.pays.find(p=>p.key==='야간수당').amt],
+    ['휴일시간외수당',r.pays.find(p=>p.key==='휴일시간외수당').amt],
+    ['정액급식비',r.pays.find(p=>p.key==='정액급식비').amt],
+  ];
+  const deductItems=[
+    ['소득세',r.incomeTax],['지방소득세',r.localTax],['건강보험',r.health],
+    ['노인장기요양보험',r.care],['국민연금',r.pension],['고용보험',r.employ],
+    ['상조회비',r.mutual],['노조회비',r.union]
+  ];
+  const rowH=6.2;
+  const maxRows=Math.max(payItems.length,deductItems.length);
+  doc.setFont('helvetica','normal');
+  for(let i=0;i<maxRows;i++){
+    doc.setDrawColor(200,200,200);
+    doc.rect(lm,y,c1,rowH);doc.rect(lm+c1,y,c2,rowH);
+    doc.rect(lm+half+4,y,c1,rowH);doc.rect(lm+half+4+c1,y,c2,rowH);
+    if(payItems[i]){
+      doc.text(payItems[i][0],lm+2,y+4.2);
+      doc.text(payItems[i][1].toLocaleString(),lm+c1+c2-2,y+4.2,{align:'right'});
+    }
+    if(deductItems[i]){
+      doc.text(deductItems[i][0],lm+half+4+2,y+4.2);
+      doc.text(deductItems[i][1].toLocaleString(),lm+half+4+c1+c2-2,y+4.2,{align:'right'});
+    }
+    y+=rowH;
+  }
+
+  doc.setFont('helvetica','bold');
+  doc.setFillColor(220,232,250);doc.rect(lm,y,c1,7,'F');doc.rect(lm+c1,y,c2,7,'F');
+  doc.setFillColor(250,222,222);doc.rect(lm+half+4,y,c1,7,'F');doc.rect(lm+half+4+c1,y,c2,7,'F');
+  doc.rect(lm,y,c1,7);doc.rect(lm+c1,y,c2,7);
+  doc.rect(lm+half+4,y,c1,7);doc.rect(lm+half+4+c1,y,c2,7);
+  doc.text('지 급 액 계',lm+2,y+4.8);
+  doc.text(r.totalPay.toLocaleString(),lm+c1+c2-2,y+4.8,{align:'right'});
+  doc.text('공 제 액 계',lm+half+4+2,y+4.8);
+  doc.text(r.totalDeduct.toLocaleString(),lm+half+4+c1+c2-2,y+4.8,{align:'right'});
+  y+=10;
+
+  doc.setFillColor(30,80,160);doc.rect(lm,y,cw,9,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(11);
+  doc.text(`실 수 령 액 : ${r.netPay.toLocaleString()} 원`,pageW/2,y+6.2,{align:'center'});
+  doc.setTextColor(0,0,0);
+  y+=14;
+
+  doc.setFontSize(8.5);doc.setFont('helvetica','bold');
+  const lblW2=cw/5;
+  const headers=['근로일수','총 근로시간수','연장근로시간수','야간근로시간수','휴일근로시간수'];
+  headers.forEach((h,i)=>{
+    doc.setFillColor(240,240,240);
+    doc.rect(lm+i*lblW2,y,lblW2,6,'F');
+    doc.rect(lm+i*lblW2,y,lblW2,6);
+    doc.text(h,lm+i*lblW2+lblW2/2,y+4,{align:'center'});
+  });
+  y+=6;
+  doc.setFont('helvetica','normal');
+  const vals=[r.days+'일',hoursToHM(r.otHours+r.holOTHours+r.nightHours+r.holidayHours),hoursToHM(r.otHours+r.holOTHours),hoursToHM(r.nightHours),hoursToHM(r.holidayHours)];
+  vals.forEach((v,i)=>{
+    doc.rect(lm+i*lblW2,y,lblW2,6);
+    doc.text(String(v),lm+i*lblW2+lblW2/2,y+4,{align:'center'});
+  });
+  y+=12;
+
+  doc.setFontSize(7);doc.setTextColor(120,120,120);
+  doc.text(`${r.y}.${String(r.m).padStart(2,'0')}.01 출력`,pageW-rm,y,{align:'right'});
+
+  return doc;
+}
+
+function generatePDF(){
+  if(!lastResult){
+    alert('먼저 "급여 계산하기" 버튼으로 급여를 계산해주세요.');
+    return;
+  }
+  if(typeof window.jspdf==='undefined'){
+    alert('PDF 라이브러리가 아직 로드되지 않았습니다.\n인터넷 연결을 확인한 뒤 다시 시도해주세요.');
+    return;
+  }
+  try{
+    const doc=buildPdfDoc(lastResult);
+    const r=lastResult;
+    doc.save(`임금명세서_${r.y}년${r.m}월.pdf`);
+  }catch(err){
+    alert('PDF 생성 중 오류가 발생했습니다: '+err.message);
+  }
+}
+</script>
+</body>
+</html>
