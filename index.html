@@ -120,7 +120,7 @@ footer{text-align:center;font-size:11px;color:var(--color-text-secondary);margin
       </select></div>
     </div>
     <div class="row">
-      <div><label>야간근무 총일수 (휴일야간근무 제외한 야간근무)</label><input type="number" id="night_days" value="10" min="0" max="16"></div>
+      <div><label>야간근무 총일수 (휴일야간근무, 대직 야간근무 제외한 야간근무)</label><input type="number" id="night_days" value="10" min="0" max="16"></div>
       <div></div>
     </div>
   </div>
@@ -138,7 +138,7 @@ footer{text-align:center;font-size:11px;color:var(--color-text-secondary);margin
   <div class="card">
     <div class="section-title"><span>휴일수당</span></div>
     <div class="info-box">
-      <strong style="color:var(--color-text-primary)">특별휴일</strong>(설연휴·추석연휴·5월1일·노조창립기념일[10월 4번째 금요일]) 근무는 <strong style="color:var(--color-text-primary)">1일 8시간</strong>, <strong style="color:var(--color-text-primary)">일반휴일</strong>(그 외 공휴일) 근무는 <strong style="color:var(--color-text-primary)">1일 2.6666666667시간</strong>으로 환산합니다.<br>
+      <strong style="color:var(--color-text-primary)">특별휴일</strong>(설연휴·추석연휴·5월1일·노조창립기념일[10월 4번째 금요일], 야간 대직근무) 근무는 <strong style="color:var(--color-text-primary)">1일 8시간</strong>, <strong style="color:var(--color-text-primary)">일반휴일</strong>(그 외 공휴일) 근무는 <strong style="color:var(--color-text-primary)">1일 2.6666666667시간</strong>으로 환산합니다.<br>
       휴일수당 = 당월 통상임금 × 150% × (특별휴일근무일수×8시간 + 일반휴일근무일수×2.6666666667시간)
     </div>
     <div class="row">
@@ -196,7 +196,7 @@ footer{text-align:center;font-size:11px;color:var(--color-text-secondary);margin
     <div class="info-box" style="background:#FFF2F2;border:1px solid #F3C9C9">
       <strong style="color:#993C1D">야간근무 총일수: 9일</strong><br>
       5월 전체 야간 근무는 11일이지만, 이 중 휴일(5/1, 5/25)에 해당하는 야간 2일은 제외하고
-      "야간근무 총일수(휴일야간근무 제외한 야간근무)" 칸에는 9를 입력합니다.
+      "야간근무 총일수(휴일야간근무, 대직 야간근무 제외한 야간근무)" 칸에는 9를 입력합니다.
     </div>
 
     <div class="info-box" style="background:#EEF4FB;border:1px solid #C9DCF3">
@@ -209,7 +209,7 @@ footer{text-align:center;font-size:11px;color:var(--color-text-secondary);margin
 
     <div class="info-box" style="background:#F2F8EC;border:1px solid #D3E8BD">
       <strong style="color:#3B6D11">휴일수당</strong><br>
-      • 특별휴일근무일수: 1일 (5/1 노동절) — 설·추석연휴, 노동절, 노조창립기념일이 여기 해당합니다.<br>
+      • 특별휴일근무일수: 1일 (5/1 노동절) — 설·추석연휴, 노동절, 노조창립기념일, 야간 대직근무가 여기 해당합니다.<br>
       • 일반휴일근무일수: 2일 (5/24, 5/25) — 그 외 공휴일(어린이날, 부처님오신날 등)입니다.<br>
       "휴일수당" 카드의 특별휴일/일반휴일 근무일수 칸에 각각 입력합니다.
     </div>
@@ -432,11 +432,11 @@ function calculate(){
 
   const pays=[
     {key:'본봉',name:'본봉',amt:actualBase,basis:`호봉표 금액 반영(월정액:${base.toLocaleString()},일수:${days})`},
-    {key:'가족수당',name:'가족수당',amt:family,basis:'부모'},
-    {key:'시간외수당',name:'시간외수당',amt:otPay,basis:`당월기준 통상임금 적용금액(${hourly.toLocaleString()}) × 비율(150%) × 시간(${otHours}) [${hoursToHM(otHours)}]`},
-    {key:'휴일수당',name:'휴일수당',amt:holPay,basis:`당월기준 통상임금 적용금액(${hourly.toLocaleString()}) × 비율(150%) × 시간(${holidayHours}) [${hoursToHM(holidayHours)}]`},
-    {key:'야간수당',name:'야간수당',amt:nightPay,basis:`당월기준 통상임금 적용금액(${hourly.toLocaleString()}) × 비율(50%) × 시간(${nightHours}) [${nightHoursHM}]`},
-    {key:'휴일시간외수당',name:'휴일시간외수당',amt:holOTPay,basis:`당월기준 통상임금 적용금액(${hourly.toLocaleString()}) × 비율(200%) × 시간(${holOTHours}) [${hoursToHM(holOTHours)}]`},
+    {key:'가족수당',name:'가족수당',amt:family,basis:''},
+    {key:'시간외수당',name:'시간외수당',amt:otPay,basis:`당월기준통상임금 적용금액(${hourly.toLocaleString()}) × 150% × 시간 (${hoursToHM(otHours)})`},
+    {key:'휴일수당',name:'휴일수당',amt:holPay,basis:`당월기준통상임금 적용금액(${hourly.toLocaleString()}) × 150% × 시간 (${hoursToHM(holidayHours)})`},
+    {key:'야간수당',name:'야간수당',amt:nightPay,basis:`당월기준통상임금 적용금액(${hourly.toLocaleString()}) × 50% × 시간 (${nightHoursHM})`},
+    {key:'휴일시간외수당',name:'휴일시간외수당',amt:holOTPay,basis:`당월기준통상임금 적용금액(${hourly.toLocaleString()}) × 200% × 시간 (${hoursToHM(holOTHours)})`},
     {key:'정액급식비',name:'정액급식비',amt:meal,basis:`호봉표 금액 반영(월정액:${meal.toLocaleString()},일수:${days})`},
   ];
   const totalPay=pays.reduce((s,p)=>s+p.amt,0);
@@ -461,9 +461,9 @@ function calculate(){
   document.getElementById('r-total-deduct').textContent=fmt(totalDeduct);
   document.getElementById('pay-rows').innerHTML=pays.map(p=>`<tr><td>${p.name}</td><td>${fmt(p.amt)}</td></tr>`).join('');
   const deducts=[
+    {name:'소득세',amt:incomeTax},{name:'지방소득세',amt:localTax},
     {name:'건강보험',amt:health},{name:'노인장기요양보험',amt:care},
     {name:'국민연금',amt:pension},{name:'고용보험',amt:employ},
-    {name:'소득세',amt:incomeTax},{name:'지방소득세',amt:localTax},
     {name:'상조회비',amt:mutual},{name:'노조회비',amt:union}
   ];
   document.getElementById('deduct-rows').innerHTML=deducts.map(d=>`<tr><td>${d.name}</td><td>${fmt(d.amt)}</td></tr>`).join('')+`<tr class="total"><td>합계</td><td>${fmt(totalDeduct)}</td></tr>`;
