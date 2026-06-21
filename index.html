@@ -656,7 +656,10 @@ function buildPdfDoc(r){
   y+=8;
 
   doc.setFontSize(7);doc.setTextColor(120,120,120);
-  doc.text(`${r.y}.${String(r.m).padStart(2,'0')}.01 출력`,pageW-rm,y,{align:'right'});
+  const now=new Date();
+  const pad2=n=>String(n).padStart(2,'0');
+  const outputStamp=`${now.getFullYear()}.${pad2(now.getMonth()+1)}.${pad2(now.getDate())} ${pad2(now.getHours())}:${pad2(now.getMinutes())} 출력`;
+  doc.text(outputStamp,pageW-rm,y,{align:'right'});
 
   return doc;
 }
