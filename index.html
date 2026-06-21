@@ -269,6 +269,14 @@ function hoursToHM(decHours){
   return mi===0?`${h}시`:`${h}시 ${mi}분`;
 }
 
+/* 산출근거 문구 전용: 정각이어도 "시간"을 명확히 표기 (예: 36시간 / 13시간 20분) */
+function hoursToHMText(decHours){
+  const totalMins=Math.round(decHours*60);
+  const h=Math.floor(totalMins/60);
+  const mi=totalMins%60;
+  return mi===0?`${h}시간`:`${h}시간 ${mi}분`;
+}
+
 function updatePdfStatus(){
   const btn=document.getElementById('pdf-generate-btn');
   const status=document.getElementById('pdf-status');
@@ -433,10 +441,10 @@ function calculate(){
   const pays=[
     {key:'본봉',name:'본봉',amt:actualBase,basis:`호봉표 금액 반영(월정액:${base.toLocaleString()},일수:${days})`},
     {key:'가족수당',name:'가족수당',amt:family,basis:''},
-    {key:'시간외수당',name:'시간외수당',amt:otPay,basis:`당월기준통상임금 적용금액(${hourly.toLocaleString()}) × 150% × 시간 (${hoursToHM(otHours)})`},
-    {key:'휴일수당',name:'휴일수당',amt:holPay,basis:`당월기준통상임금 적용금액(${hourly.toLocaleString()}) × 150% × 시간 (${hoursToHM(holidayHours)})`},
-    {key:'야간수당',name:'야간수당',amt:nightPay,basis:`당월기준통상임금 적용금액(${hourly.toLocaleString()}) × 50% × 시간 (${nightHoursHM})`},
-    {key:'휴일시간외수당',name:'휴일시간외수당',amt:holOTPay,basis:`당월기준통상임금 적용금액(${hourly.toLocaleString()}) × 200% × 시간 (${hoursToHM(holOTHours)})`},
+    {key:'시간외수당',name:'시간외수당',amt:otPay,basis:`당월기준통상임금 적용금액(${hourly.toLocaleString()}) × 150% × 시간 (${hoursToHMText(otHours)})`},
+    {key:'휴일수당',name:'휴일수당',amt:holPay,basis:`당월기준통상임금 적용금액(${hourly.toLocaleString()}) × 150% × 시간 (${hoursToHMText(holidayHours)})`},
+    {key:'야간수당',name:'야간수당',amt:nightPay,basis:`당월기준통상임금 적용금액(${hourly.toLocaleString()}) × 50% × 시간 (${hoursToHMText(nightHours)})`},
+    {key:'휴일시간외수당',name:'휴일시간외수당',amt:holOTPay,basis:`당월기준통상임금 적용금액(${hourly.toLocaleString()}) × 200% × 시간 (${hoursToHMText(holOTHours)})`},
     {key:'정액급식비',name:'정액급식비',amt:meal,basis:`호봉표 금액 반영(월정액:${meal.toLocaleString()},일수:${days})`},
   ];
   const totalPay=pays.reduce((s,p)=>s+p.amt,0);
@@ -614,19 +622,37 @@ function buildPdfDoc(r){
   doc.text('지급액',lm+bCol1+bCol2+bCol3/2,y+4.8,{align:'center'});
   y+=bHeaderH;
 
+  /* 한 줄에 들어가도록 텍스트 폭에 맞춰 폰트 크기를 자동으로 줄이는 헬퍼 */
+  function fitFontSize(text, maxWidth, startSize, minSize){
+    let size=startSize;
+    doc.setFontSize(size);
+    while(doc.getTextWidth(text)>maxWidth && size>minSize){
+      size-=0.5;
+      doc.setFontSize(size);
+    }
+    return size;
+  }
+
   doc.setFont('NotoKR','normal');doc.setFontSize(8);
   r.pays.forEach((p,i)=>{
-    const lines=doc.splitTextToSize(p.basis,bCol2-4);
-    const rowH3=Math.max(7,lines.length*3.6+3);
+    const maxWidth=bCol2-4;
+    const fitSize=p.basis?fitFontSize(p.basis,maxWidth,8,6):8;
+    doc.setFontSize(fitSize);
+    const lines=p.basis?doc.splitTextToSize(p.basis,maxWidth):[''];
+    const lineH=fitSize*0.45;
+    const rowH3=Math.max(7,lines.length*lineH+3);
     if(i%2===0){doc.setFillColor(250,250,250);doc.rect(lm,y,bCol1+bCol2+bCol3,rowH3,'F');}
     doc.setDrawColor(200,200,200);
     doc.rect(lm,y,bCol1,rowH3);doc.rect(lm+bCol1,y,bCol2,rowH3);doc.rect(lm+bCol1+bCol2,y,bCol3,rowH3);
+    doc.setFontSize(8);
     doc.text(p.name,lm+2,y+4.2);
-    let ly=y+4.2;
-    lines.forEach(line=>{doc.text(line,lm+bCol1+2,ly);ly+=3.6;});
     doc.text(p.amt.toLocaleString(),lm+bCol1+bCol2+bCol3-2,y+4.2,{align:'right'});
+    doc.setFontSize(fitSize);
+    let ly=y+4.2;
+    lines.forEach(line=>{doc.text(line,lm+bCol1+2,ly);ly+=lineH;});
     y+=rowH3;
   });
+  doc.setFontSize(8);
   y+=8;
 
   doc.setFontSize(7);doc.setTextColor(120,120,120);
