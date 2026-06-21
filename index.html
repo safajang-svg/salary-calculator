@@ -601,7 +601,17 @@ function buildPdfDoc(r){
   doc.text(r.totalDeduct.toLocaleString(),lm+half+4+c1+c2-2,y+6.2,{align:'right'});
   doc.setTextColor(0,0,0);
   doc.setFontSize(8.5);
-  y+=14;
+  y+=9;
+
+  const netH=10;
+  doc.setFillColor(15,55,140);doc.rect(lm,y,cw,netH,'F');
+  doc.setDrawColor(150,150,150);doc.rect(lm,y,cw,netH);
+  doc.setTextColor(255,255,255);doc.setFontSize(12);doc.setFont('NotoKR','bold');
+  const netPay=r.totalPay-r.totalDeduct;
+  doc.text('실 수 령 액',lm+4,y+6.8);
+  doc.text(`${netPay.toLocaleString()} 원`,lm+cw-4,y+6.8,{align:'right'});
+  doc.setTextColor(0,0,0);doc.setFontSize(8.5);
+  y+=netH+5;
 
   // 산출식 또는 산출방법 표 (구분 / 산출식 또는 산출방법 / 지급액)
   doc.setFont('NotoKR','bold');doc.setFontSize(10);
