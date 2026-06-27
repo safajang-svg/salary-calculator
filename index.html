@@ -326,6 +326,8 @@ function saveFixed(){
   document.getElementById('fixed-hint').innerHTML=`✓ 저장되었습니다. 현재 ${fixedValues.grade}호봉 기준(본봉 ${fmt(fixedValues.base_salary)})이 적용됩니다.`;
   document.getElementById('grade').disabled=true;
   FIXED_KEYS.forEach(k=>{document.getElementById(k).disabled=true;});
+  // 호봉 변경 후 즉시 재계산해서 화면(본봉 등)에 반영
+  if(lastResult) calculate();
 }
 
 function showTab(t,btn){
@@ -394,19 +396,19 @@ function calculate(){
   const holOTPay=Math.floor(holOTHours*hourly*2.0/10)*10;
 
   const days=new Date(y,m,0).getDate();
-  const actualBase=Math.round(base/31*days);
+  const actualBase=base;
 
   const holidayHours=specialHolDays*8+normalHolDays*2.6666666667;
   const holPay=Math.floor(holidayHours*hourly*1.5/10)*10;
 
   const pays=[
-    {key:'본봉',name:'본봉',amt:actualBase,basis:`호봉표 금액 반영(월정액:${base.toLocaleString()},일수:${days})`},
+    {key:'본봉',name:'본봉',amt:actualBase,basis:`호봉표 금액 반영(월정액:${base.toLocaleString()})`},
     {key:'가족수당',name:'가족수당',amt:family,basis:''},
     {key:'시간외수당',name:'시간외수당',amt:otPay,basis:`당월기준통상임금 적용금액(${hourly.toLocaleString()}) × 150% × 시간 (${hoursToHMText(otHours)})`},
     {key:'휴일수당',name:'휴일수당',amt:holPay,basis:`당월기준통상임금 적용금액(${hourly.toLocaleString()}) × 150% × 시간 (${hoursToHMText(holidayHours)})`},
     {key:'야간수당',name:'야간수당',amt:nightPay,basis:`당월기준통상임금 적용금액(${hourly.toLocaleString()}) × 50% × 시간 (${hoursToHMText(nightHours)})`},
     {key:'휴일시간외수당',name:'휴일시간외수당',amt:holOTPay,basis:`당월기준통상임금 적용금액(${hourly.toLocaleString()}) × 200% × 시간 (${hoursToHMText(holOTHours)})`},
-    {key:'정액급식비',name:'정액급식비',amt:meal,basis:`호봉표 금액 반영(월정액:${meal.toLocaleString()},일수:${days})`},
+    {key:'정액급식비',name:'정액급식비',amt:meal,basis:`호봉표 금액 반영(월정액:${meal.toLocaleString()})`},
   ];
   const totalPay=pays.reduce((s,p)=>s+p.amt,0);
   const taxableBase=totalPay-meal;
